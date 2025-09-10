@@ -87,7 +87,7 @@ class NetworkInterceptor: NSObject {
 }
 
 // MARK: - Custom URL Protocol for Interception
-class DebugURLProtocol: URLProtocol, URLSessionDataDelegate {
+public class DebugURLProtocol: URLProtocol, URLSessionDataDelegate {
     private static let requestProperty = "DebugURLProtocolHandled"
     private var session: URLSession?
     private var dataTask: URLSessionDataTask?
@@ -95,7 +95,7 @@ class DebugURLProtocol: URLProtocol, URLSessionDataDelegate {
     private var networkRequest: NetworkRequest?
     private var responseData = Data()
     
-    override class func canInit(with request: URLRequest) -> Bool {
+    public override class func canInit(with request: URLRequest) -> Bool {
         // Avoid handling our own requests
         if URLProtocol.property(forKey: requestProperty, in: request) != nil {
             return false
@@ -111,11 +111,11 @@ class DebugURLProtocol: URLProtocol, URLSessionDataDelegate {
         return true
     }
     
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+    public override class func canonicalRequest(for request: URLRequest) -> URLRequest {
         return request
     }
     
-    override func startLoading() {
+    public override func startLoading() {
         guard let newRequest = createMutableRequest() else {
             client?.urlProtocolDidFinishLoading(self)
             return
@@ -143,7 +143,7 @@ class DebugURLProtocol: URLProtocol, URLSessionDataDelegate {
         dataTask?.resume()
     }
     
-    override func stopLoading() {
+    public override func stopLoading() {
         dataTask?.cancel()
         session?.finishTasksAndInvalidate()
     }
@@ -158,17 +158,17 @@ class DebugURLProtocol: URLProtocol, URLSessionDataDelegate {
 
     
     // MARK: - URL Session Delegate
-    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+    public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         completionHandler(.allow)
     }
     
-    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+    public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         responseData.append(data)
         client?.urlProtocol(self, didLoad: data)
     }
     
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+    public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let error = error {
             client?.urlProtocol(self, didFailWithError: error)
             updateNetworkRequest(with: nil, error: error)
