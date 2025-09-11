@@ -20,5 +20,6 @@ struct DefaultDebugAction: DebugAction {
         case appInfo
         case showUserDefaults
         case simulateMemoryWarning
+        case interfaceStyle
     }
 }

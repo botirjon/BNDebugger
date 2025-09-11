@@ -6,7 +6,24 @@
 //
 
 import UIKit
+import SwiftUI
 import Foundation
+
+public enum DebugLanguage {
+    case uzbek
+    case english
+    case russian
+}
+
+public struct DebugInterfaceConfig {
+    public var language: DebugLanguage = .uzbek
+    public var userInterfaceStyle: UIUserInterfaceStyle?
+    
+    public init(language: DebugLanguage = .english, userInterfaceStyle: UIUserInterfaceStyle? = nil) {
+        self.language = language
+        self.userInterfaceStyle = userInterfaceStyle
+    }
+}
 
 public class DebugManager: NSObject {
     public static let shared = DebugManager()
@@ -15,17 +32,28 @@ public class DebugManager: NSObject {
     private var floatingButton: FloatingDebugButton?
     private var debugWindow: UIWindow?
     private var networkInterceptor: NetworkInterceptor?
+    private var preferredLanguage: DebugLanguage = .english
     
     public var customActions: [CustomDebugAction] = []
+    
+    private var preferredUserInterfaceStyle: UIUserInterfaceStyle {
+        getSavedUserInterfaceStyle() ?? .light
+    }
+    
+    var currentUserInterfaceStyle: UIUserInterfaceStyle {
+        debugWindow?.overrideUserInterfaceStyle ?? .light
+    }
     
     private override init() {
         super.init()
     }
     
     // MARK: - Public API
-    public func startDebugging() {
+    public func startDebugging(with config: DebugInterfaceConfig = .init()) {
         guard !isActive else { return }
         isActive = true
+        self.saveUserInterfaceStyle(config.userInterfaceStyle ?? .light)
+        self.preferredLanguage = config.language
         
         setupFloatingButton()
         setupNetworkInterceptor()
@@ -40,7 +68,7 @@ public class DebugManager: NSObject {
         networkInterceptor = nil
     }
     
-    public func animateNetworkRequest() {
+    func animateNetworkRequest() {
         guard isActive else { return }
         DispatchQueue.main.async {
             self.floatingButton?.animateRocket()
@@ -48,7 +76,7 @@ public class DebugManager: NSObject {
         }
     }
     
-    public func updateRequestCount() {
+    func updateRequestCount() {
         guard isActive else { return }
         let count = NetworkInterceptor.shared.getAllRequests().count
         DispatchQueue.main.async {
@@ -84,18 +112,34 @@ public class DebugManager: NSObject {
             .compactMap({ $0 as? UIWindowScene })
             .first else { return }
         
-        let debugVC = DebugViewController()
-        let navController = UINavigationController(rootViewController: debugVC)
-        
-        debugWindow = UIWindow(windowScene: windowScene)
-        debugWindow?.rootViewController = navController
-        debugWindow?.windowLevel = UIWindow.Level.alert + 1
-        debugWindow?.makeKeyAndVisible()
-        
-        debugVC.onDismiss = { [weak self] in
+        let debugView = DebugView { [weak self] in
             self?.debugWindow?.isHidden = true
             self?.debugWindow = nil
         }
+        
+        let hostingController = UIHostingController(rootView: debugView)
+        
+        debugWindow = UIWindow(windowScene: windowScene)
+        debugWindow?.rootViewController = hostingController
+        debugWindow?.windowLevel = UIWindow.Level.alert + 1
+        debugWindow?.makeKeyAndVisible()
+        debugWindow?.overrideUserInterfaceStyle = preferredUserInterfaceStyle
+    }
+    
+    func updateUserInterfaceStyle(_ style: UIUserInterfaceStyle) {
+        saveUserInterfaceStyle(style)
+        debugWindow?.overrideUserInterfaceStyle = preferredUserInterfaceStyle
+    }
+    
+    private func saveUserInterfaceStyle(_ style: UIUserInterfaceStyle) {
+        UserDefaults.standard.set(style.rawValue, forKey: "DebugInterfaceStyle")
+        UserDefaults.standard.synchronize()
+    }
+    
+    private func getSavedUserInterfaceStyle() -> UIUserInterfaceStyle? {
+        let savedStyleRawValue = UserDefaults.standard.integer(forKey: "DebugInterfaceStyle")
+        let savedStyle = UIUserInterfaceStyle(rawValue: savedStyleRawValue)
+        return savedStyle
     }
 }
 
