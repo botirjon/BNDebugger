@@ -25,7 +25,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 print("I am going to open feature flags menu")
             })
         ]
-        DebugManager.shared.startDebugging()
+        DebugManager.shared.startDebugging(with: .init(userInterfaceStyle: .dark))
         #endif
     }
 
