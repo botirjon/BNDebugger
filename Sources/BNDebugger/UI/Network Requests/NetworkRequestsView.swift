@@ -8,52 +8,32 @@
 import SwiftUI
 
 struct NetworkRequestsView: View {
-    @StateObject private var viewModel = NetworkRequestsViewModel()
+    @ObservedObject private var viewModel: NetworkRequestsViewModel
     @State private var showingClearAlert = false
     @State private var searchText = ""
     
+    init(viewModel: NetworkRequestsViewModel, showingClearAlert: Bool = false, searchText: String = "") {
+        self.viewModel = viewModel
+        self.showingClearAlert = showingClearAlert
+        self.searchText = searchText
+    }
+    
     var body: some View {
-        NavigationView {
-            VStack {
-                if #unavailable(iOS 15.0) {
-                    SearchBar(text: $searchText, placeholder: "Search requests, URLs, or methods")
-                        .padding(.horizontal)
-                }
-                
-                if filteredRequests.isEmpty && !searchText.isEmpty {
-                    emptySearchStateView
-                } else if viewModel.networkRequests.isEmpty {
-                    emptyStateView
-                } else {
-                    requestsList
-                }
+        VStack {
+            if #unavailable(iOS 15.0) {
+                SearchBar(text: $searchText, placeholder: "Search requests, URLs, or methods")
+                    .padding(.horizontal)
             }
-            .navigationTitle("Network")
-            .modifier(ConditionalSearchableModifier(text: $searchText, prompt: "Search requests, URLs, or methods"))
-            .navigationBarItems(trailing: 
-                HStack {
-                    Button(action: viewModel.loadNetworkRequests) {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    
-                    Button(action: {
-                        showingClearAlert = true
-                    }) {
-                        Image(systemName: "trash")
-                    }
-                }
-            )
-            .alert(isPresented: $showingClearAlert) {
-                Alert(
-                    title: Text("Clear Network Requests"),
-                    message: Text("Are you sure you want to clear all network requests?"),
-                    primaryButton: .destructive(Text("Clear")) {
-                        viewModel.clearRequests()
-                    },
-                    secondaryButton: .cancel()
-                )
+            
+            if filteredRequests.isEmpty && !searchText.isEmpty {
+                emptySearchStateView
+            } else if viewModel.networkRequests.isEmpty {
+                emptyStateView
+            } else {
+                requestsList
             }
         }
+        .modifier(ConditionalSearchableModifier(text: $searchText, prompt: "Search requests, URLs, or methods"))
     }
     
     private var requestsList: some View {
@@ -149,5 +129,7 @@ struct NetworkRequestsView: View {
 }
 
 #Preview {
-    NetworkRequestsView()
+    let interceptor = MockNetworkInterceptor()
+    let viewModel = NetworkRequestsViewModel(networkInterceptor: interceptor, networkRequestsStore: interceptor)
+    NetworkRequestsView(viewModel: viewModel)
 }

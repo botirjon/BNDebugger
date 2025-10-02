@@ -27,11 +27,11 @@ public struct DebugInterfaceConfig {
 
 public class DebugManager: NSObject {
     public static let shared = DebugManager()
-    
     private var isActive = false
+    private var networkInterceptor: NetworkInterceptor?
+    private var performanceMonitor: PerformanceMonitor?
     private var floatingButton: FloatingDebugButton?
     private var debugWindow: UIWindow?
-    private var networkInterceptor: NetworkInterceptor?
     private var preferredLanguage: DebugLanguage = .english
     
     public var customActions: [CustomDebugAction] = []
@@ -57,6 +57,7 @@ public class DebugManager: NSObject {
         
         setupFloatingButton()
         setupNetworkInterceptor()
+        setupPerformanceMonitor()
         updateRequestCount() // Initialize count display
     }
     
@@ -65,7 +66,9 @@ public class DebugManager: NSObject {
         isActive = false
         
         removeFloatingButton()
+        performanceMonitor?.stopMonitoring()
         networkInterceptor = nil
+        performanceMonitor = nil
     }
     
     func animateNetworkRequest() {
@@ -78,7 +81,7 @@ public class DebugManager: NSObject {
     
     func updateRequestCount() {
         guard isActive else { return }
-        let count = NetworkInterceptor.shared.getAllRequests().count
+        let count = networkInterceptor?.getAllRequests().count ?? 0
         DispatchQueue.main.async {
             self.floatingButton?.updateCount(count)
         }
@@ -103,24 +106,48 @@ public class DebugManager: NSObject {
     }
     
     private func setupNetworkInterceptor() {
-        networkInterceptor = NetworkInterceptor.shared
+        networkInterceptor = NetworkInterceptor()
         networkInterceptor?.startIntercepting()
+        
+        networkInterceptor?.onAdd = { [weak self] _ in
+            self?.animateNetworkRequest()
+        }
+        
+        networkInterceptor?.onClear = { [weak self] in
+            self?.updateRequestCount()
+        }
     }
     
-    private func showDebugInterface() {
+    private func setupPerformanceMonitor() {
+        performanceMonitor = PerformanceMonitor()
+    }
+    
+    @MainActor private func showDebugInterface() {
         guard let windowScene = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
             .first else { return }
         
-        let debugView = DebugView { [weak self] in
-            self?.debugWindow?.isHidden = true
-            self?.debugWindow = nil
-        }
+        guard let networkInterceptor, let performanceMonitor else { return }
         
-        let hostingController = UIHostingController(rootView: debugView)
+//        let debugViewModel = DebugViewModel(
+//            networkInterceptor: networkInterceptor, 
+//            networkRequestsStore: networkInterceptor,
+//            performanceMonitor: performanceMonitor
+//        )
+//        
+//        let debugView = DebugView(viewModel: debugViewModel) { [weak self] in
+//            self?.debugWindow?.isHidden = true
+//            self?.debugWindow = nil
+//        }
+//        
+//        let hostingController = UIHostingController(rootView: debugView)
+        
+        let tabBar = MainTabBarController(networkInterceptor: networkInterceptor, networkRequestsStore: networkInterceptor, performanceMonitor: performanceMonitor)
+        let navigationController = UINavigationController(rootViewController: tabBar)
+        tabBar.navigationItem.leftBarButtonItem = UIBarButtonItem.init(title: "Close", style: .plain, target: self, action: #selector(closeDebugWindow))
         
         debugWindow = UIWindow(windowScene: windowScene)
-        debugWindow?.rootViewController = hostingController
+        debugWindow?.rootViewController = navigationController
         debugWindow?.windowLevel = UIWindow.Level.alert + 1
         debugWindow?.makeKeyAndVisible()
         debugWindow?.overrideUserInterfaceStyle = preferredUserInterfaceStyle
@@ -140,6 +167,11 @@ public class DebugManager: NSObject {
         let savedStyleRawValue = UserDefaults.standard.integer(forKey: "DebugInterfaceStyle")
         let savedStyle = UIUserInterfaceStyle(rawValue: savedStyleRawValue)
         return savedStyle
+    }
+    
+    @objc private func closeDebugWindow() {
+        self.debugWindow?.isHidden = true
+        self.debugWindow = nil
     }
 }
 

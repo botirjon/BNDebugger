@@ -1,92 +1,12 @@
 //
-//  NetworkInterceptor.swift
+//  DebugURLProtocol.swift
 //  BNDebugger
 //
-//  Created by MAC-Nasridinov-B on 10/09/25.
+//  Created by MAC-Nasridinov-B on 12/09/25.
 //
 
 import Foundation
-import UIKit
 
-// MARK: - Network Request Model
-struct NetworkRequest {
-    let id = UUID()
-    let url: String
-    let method: String
-    let headers: [String: String]
-    let body: Data?
-    let timestamp: Date
-    var response: NetworkResponse?
-    var status: RequestStatus = .pending
-    
-    enum RequestStatus {
-        case pending
-        case completed
-        case failed
-    }
-}
-
-struct NetworkResponse {
-    let statusCode: Int
-    let headers: [String: String]
-    let body: Data?
-    let responseTime: TimeInterval
-}
-
-// MARK: - Network Interceptor
-class NetworkInterceptor: NSObject {
-    static let shared = NetworkInterceptor()
-    
-    private var requests: [NetworkRequest] = []
-    private let requestQueue = DispatchQueue(label: "com.debugtool.network", attributes: .concurrent)
-    
-    private override init() {
-        super.init()
-    }
-    
-    func startIntercepting() {
-        URLProtocol.registerClass(DebugURLProtocol.self)
-    }
-    
-    func stopIntercepting() {
-        URLProtocol.unregisterClass(DebugURLProtocol.self)
-    }
-    
-    func addRequest(_ request: NetworkRequest) {
-        requestQueue.async(flags: .barrier) {
-            self.requests.append(request)
-        }
-        
-        // Trigger rocket animation on debug button
-        DebugManager.shared.animateNetworkRequest()
-    }
-    
-    func updateRequest(id: UUID, response: NetworkResponse?, status: NetworkRequest.RequestStatus) {
-        requestQueue.async(flags: .barrier) {
-            if let index = self.requests.firstIndex(where: { $0.id == id }) {
-                self.requests[index].response = response
-                self.requests[index].status = status
-            }
-        }
-    }
-    
-    func getAllRequests() -> [NetworkRequest] {
-        return requestQueue.sync {
-            return Array(requests.reversed()) // Show newest first
-        }
-    }
-    
-    func clearRequests() {
-        requestQueue.async(flags: .barrier) {
-            self.requests.removeAll()
-        }
-        
-        // Update debug button count
-        DebugManager.shared.updateRequestCount()
-    }
-}
-
-// MARK: - Custom URL Protocol for Interception
 public class DebugURLProtocol: URLProtocol, URLSessionDataDelegate {
     private static let requestProperty = "DebugURLProtocolHandled"
     private var session: URLSession?
@@ -134,7 +54,7 @@ public class DebugURLProtocol: URLProtocol, URLSessionDataDelegate {
         )
         
         if let networkRequest = networkRequest {
-            NetworkInterceptor.shared.addRequest(networkRequest)
+            NotificationCenter.default.post(name: .debugRequestDidStart, object: networkRequest)
         }
         
         // Create session and data task
@@ -192,17 +112,21 @@ public class DebugURLProtocol: URLProtocol, URLSessionDataDelegate {
                 responseTime: responseTime
             )
             
-            NetworkInterceptor.shared.updateRequest(
+            let update = NetworkRequestUpdate(
                 id: networkRequest.id,
                 response: networkResponse,
                 status: .completed
             )
+            
+            NotificationCenter.default.post(name: .debugRequestDidUpdate, object: update)
+            
         } else if error != nil {
-            NetworkInterceptor.shared.updateRequest(
+            let update = NetworkRequestUpdate(
                 id: networkRequest.id,
                 response: nil,
                 status: .failed
             )
+            NotificationCenter.default.post(name: .debugRequestDidUpdate, object: update)
         }
     }
 }

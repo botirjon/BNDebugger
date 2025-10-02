@@ -50,7 +50,7 @@ struct NetworkRequestRowView: View {
                 if let duration = getRequestDuration() {
                     Text(duration)
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.blue)
+                        .foregroundColor(.pink)
                 }
                 
                 Spacer()
@@ -186,7 +186,8 @@ struct MimeTypeTag {
         method: "GET",
         headers: ["Content-Type": "application/json"],
         body: nil,
-        timestamp: Date()
+        timestamp: Date(),
+        response: NetworkResponse(statusCode: 200, headers: ["content-type": "application/json"], body: nil, responseTime: 200)
     )
     
     return List {

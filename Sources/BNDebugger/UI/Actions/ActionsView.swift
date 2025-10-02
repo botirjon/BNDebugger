@@ -11,49 +11,38 @@ struct ActionsView: View {
     @StateObject private var viewModel = ActionsViewModel()
     
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(viewModel.sections, id: \.title) { section in
-                    Section {
-                        ForEach(section.actions, id: \.title) { action in
-                            ActionRowView(action: action) {
-                                viewModel.handleAction(action)
-                            }
-                        }
-                    } header: {
-                        Text(section.title)
-                            .font(.headline)
-                    }
-                }
-            }
-            .navigationTitle("Actions")
-            .sheet(isPresented: $viewModel.showingAppInfo) {
-                NavigationView {
-                    AppInfoView()
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                Button("Done") {
-                                    viewModel.showingAppInfo = false
-                                }
-                            }
-                        }
-                }
-            }
-            .sheet(isPresented: $viewModel.showingUserDefaults) {
-                UserDefaultsView()
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button("Done") {
-                                viewModel.showingUserDefaults = false
-                            }
+        List {
+            ForEach(viewModel.sections, id: \.title) { section in
+                Section {
+                    ForEach(section.actions, id: \.title) { action in
+                        ActionRowView(action: action) {
+                            viewModel.handleAction(action)
                         }
                     }
-            }
-            .sheet(isPresented: $viewModel.showingInterfaceStyle) {
-                InterfaceStyleView()
+                } header: {
+                    Text(section.title)
+                        .font(.headline)
+                }
             }
         }
+        .sheet(isPresented: $viewModel.showingAppInfo, content: {
+            NavigationView {
+                AppInfoView()
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") {
+                                viewModel.showingAppInfo = false
+                            }
+                        }
+                    }
+            }
+            
+        })
+        .sheet(isPresented: $viewModel.showingInterfaceStyle) {
+            InterfaceStyleView()
+        }
+
     }
 }
 

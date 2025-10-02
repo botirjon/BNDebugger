@@ -12,48 +12,46 @@ struct UserDefaultsView: View {
     @State private var searchText = ""
     
     var body: some View {
-        NavigationView {
-            VStack {
-                if #unavailable(iOS 15.0) {
-                    SearchBar(text: $searchText, placeholder: "Search keys or values")
-                        .padding(.horizontal)
-                }
-                
-                if viewModel.userDefaultsEntries.isEmpty && !viewModel.isLoading {
-                    emptyStateView
-                } else {
-                    userDefaultsList
-                }
+        VStack {
+            if #unavailable(iOS 15.0) {
+                SearchBar(text: $searchText, placeholder: "Search keys or values")
+                    .padding(.horizontal)
             }
-            .navigationTitle("UserDefaults")
-            .navigationBarTitleDisplayMode(.inline)
-            .modifier(ConditionalSearchableModifier(text: $searchText, prompt: "Search keys or values"))
-            .navigationBarItems(trailing:
-                HStack {
-                Button(action: viewModel.refreshUserDefaults) {
-                    Image(systemName: "arrow.clockwise")
-                }
-                
-                Button(action: {
-                    viewModel.showingClearAlert = true
-                }) {
-                    Image(systemName: "trash")
-                }
-                }
+            
+            if viewModel.userDefaultsEntries.isEmpty && !viewModel.isLoading {
+                emptyStateView
+            } else {
+                userDefaultsList
+            }
+        }
+        .navigationTitle("UserDefaults")
+        .navigationBarTitleDisplayMode(.inline)
+        .modifier(ConditionalSearchableModifier(text: $searchText, prompt: "Search keys or values"))
+        .navigationBarItems(trailing:
+            HStack {
+            Button(action: viewModel.refreshUserDefaults) {
+                Image(systemName: "arrow.clockwise")
+            }
+            
+            Button(action: {
+                viewModel.showingClearAlert = true
+            }) {
+                Image(systemName: "trash")
+            }
+            }
+        )
+        .onAppear {
+            viewModel.loadUserDefaults()
+        }
+        .alert(isPresented: $viewModel.showingClearAlert) {
+            Alert(
+                title: Text("Clear UserDefaults"),
+                message: Text("This will remove all UserDefaults entries. This action cannot be undone."),
+                primaryButton: .destructive(Text("Clear All")) {
+                    viewModel.clearAllUserDefaults()
+                },
+                secondaryButton: .cancel()
             )
-            .onAppear {
-                viewModel.loadUserDefaults()
-            }
-            .alert(isPresented: $viewModel.showingClearAlert) {
-                Alert(
-                    title: Text("Clear UserDefaults"),
-                    message: Text("This will remove all UserDefaults entries. This action cannot be undone."),
-                    primaryButton: .destructive(Text("Clear All")) {
-                        viewModel.clearAllUserDefaults()
-                    },
-                    secondaryButton: .cancel()
-                )
-            }
         }
     }
     

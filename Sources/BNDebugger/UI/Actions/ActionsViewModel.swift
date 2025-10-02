@@ -16,7 +16,6 @@ class ActionsViewModel: ObservableObject {
     
     @Published var sections: [DebugActionsSection] = []
     @Published var showingAppInfo = false
-    @Published var showingUserDefaults = false
     @Published var showingInterfaceStyle = false
     
     init() {
@@ -26,9 +25,7 @@ class ActionsViewModel: ObservableObject {
     private func setupSections() {
         let defaultSection = DebugActionsSection(title: "Actions", actions: [
             DefaultDebugAction(title: "App Info", actionType: .appInfo),
-            DefaultDebugAction(title: "Show UserDefaults", actionType: .showUserDefaults),
-            DefaultDebugAction(title: "Interface Style", description: "Change debug interface appearance", actionType: .interfaceStyle),
-            DefaultDebugAction(title: "Simulate Memory Warning", actionType: .simulateMemoryWarning)
+            DefaultDebugAction(title: "Interface Style", description: "Change debug interface appearance", actionType: .interfaceStyle)
         ])
         
         sections = [
@@ -49,12 +46,8 @@ class ActionsViewModel: ObservableObject {
         switch action.actionType {
         case .appInfo:
             showingAppInfo = true
-        case .showUserDefaults:
-            showingUserDefaults = true
         case .interfaceStyle:
             showingInterfaceStyle = true
-        case .simulateMemoryWarning:
-            break
         }
     }
     

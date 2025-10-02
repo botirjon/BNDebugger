@@ -14,7 +14,12 @@ class NetworkRequestsViewModel: ObservableObject {
     
     private var timer: Timer?
     
-    init() {
+    weak var networkInterceptor: NetworkIntercepting?
+    weak var networkRequestsStore: NetworkRequestsStoring?
+    
+    init(networkInterceptor: NetworkIntercepting, networkRequestsStore: NetworkRequestsStoring?) {
+        self.networkInterceptor = networkInterceptor
+        self.networkRequestsStore = networkRequestsStore
         loadNetworkRequests()
         startAutoRefresh()
     }
@@ -25,11 +30,11 @@ class NetworkRequestsViewModel: ObservableObject {
     }
     
     func loadNetworkRequests() {
-        networkRequests = NetworkInterceptor.shared.getAllRequests()
+        networkRequests = networkRequestsStore?.getAllRequests() ?? []
     }
     
     func clearRequests() {
-        NetworkInterceptor.shared.clearRequests()
+        networkRequestsStore?.clearRequests()
         networkRequests.removeAll()
     }
     

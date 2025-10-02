@@ -18,8 +18,6 @@ struct DefaultDebugAction: DebugAction {
     
     enum ActionType {
         case appInfo
-        case showUserDefaults
-        case simulateMemoryWarning
         case interfaceStyle
     }
 }

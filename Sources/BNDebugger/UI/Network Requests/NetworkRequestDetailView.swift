@@ -39,12 +39,23 @@ struct NetworkRequestDetailView: View {
         }
         .navigationTitle("Request Details")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarItems(trailing: Button("", systemImage: "square.and.arrow.up", action: {
+            debugPrint("Share request")
+        }))
+    }
+    
+    private var monospacedBoldValueFont: Font {
+        .system(size: 14, weight: .bold, design: .monospaced)
+    }
+    
+    private var monospacedRegularValueFont: Font {
+        .system(size: 14, weight: .regular, design: .monospaced)
     }
     
     private var requestSection: some View {
         DetailSection(title: "Request") {
-            DetailItem(label: "URL", value: request.url)
-            DetailItem(label: "Method", value: request.method)
+            DetailItem(label: "URL", value: request.url, valueColor: .accentColor)
+            DetailItem(label: "Method", value: request.method,  valueColor: .accentColor)
             DetailItem(label: "Timestamp", value: DateFormatter.localizedString(from: request.timestamp, dateStyle: .short, timeStyle: .medium))
         }
     }
@@ -52,7 +63,7 @@ struct NetworkRequestDetailView: View {
     private var headersSection: some View {
         DetailSection(title: "Headers") {
             ForEach(Array(request.headers.keys.sorted()), id: \.self) { key in
-                DetailItem(label: key, value: request.headers[key] ?? "")
+                DetailItem(label: key, value: request.headers[key] ?? "", valueFont: monospacedRegularValueFont)
             }
         }
     }
@@ -162,55 +173,23 @@ struct NetworkRequestDetailView: View {
     }
 }
 
-struct DetailSection<Content: View>: View {
-    let title: String
-    let content: () -> Content
-    
-    init(title: String, @ViewBuilder content: @escaping () -> Content) {
-        self.title = title
-        self.content = content
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.system(size: 18, weight: .bold))
-            
-            content()
-            
-            Divider()
-        }
-    }
-}
 
-struct DetailItem: View {
-    let label: String
-    let value: String
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.secondary)
-            if #available(iOS 15.0, *) {
-                Text(value)
-                    .font(.system(size: 14))
-                    .textSelection(.enabled)
-            } else {
-                Text(value)
-                    .font(.system(size: 14))
-            }
-        }
-    }
-}
 
 #Preview {
+    let json = "{\"api_key\": \"key\"}"
+    
     let sampleRequest = NetworkRequest(
         url: "https://api.example.com/users",
         method: "GET",
         headers: ["Content-Type": "application/json"],
-        body: nil,
-        timestamp: Date()
+        body: json.data(using: .utf8, allowLossyConversion: false),
+        timestamp: Date(),
+        response: NetworkResponse(
+            statusCode: 400,
+            headers: ["Content-Type": "application/json"],
+            body: json.data(using: .utf8, allowLossyConversion: false),
+            responseTime: 2
+        )
     )
     
     NavigationView {
