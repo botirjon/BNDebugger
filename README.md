@@ -23,6 +23,19 @@ This package was made out of necessity — there are far more advanced debugging
 - **Non-intrusive UI** - Floating draggable button that doesn't interfere with your app's interaction
 - **Multi-language Support** - Supports English, Russian, and Uzbek
 
+## Screenshots
+
+<p align="center">
+  <img src="images/screen_1.png" width="250" alt="Screenshot 1">
+  <img src="images/screen_2.png" width="250" alt="Screenshot 2">
+  <img src="images/screen_3.png" width="250" alt="Screenshot 3">
+</p>
+<p align="center">
+  <img src="images/screen_4.png" width="250" alt="Screenshot 4">
+  <img src="images/screen_5.png" width="250" alt="Screenshot 5">
+  <img src="images/screen_6.png" width="250" alt="Screenshot 6">
+</p>
+
 ## Requirements
 
 - iOS 14.0+
