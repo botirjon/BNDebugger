@@ -21,7 +21,7 @@ This package was made out of necessity — there are far more advanced debugging
 - **Resource Browser** - Browse and inspect app resources including Documents folder, Temp folder, and UserDefaults
 - **Custom Actions** - Add your own debug actions for quick access during development
 - **Non-intrusive UI** - Floating draggable button that doesn't interfere with your app's interaction
-- **Multi-language Support** - Supports English, Russian, and Uzbek
+- **Multi-language Support** *(Coming Soon)* - Currently English only. Russian and Uzbek support is planned
 
 ## Screenshots
 
@@ -117,6 +117,8 @@ public struct DebugInterfaceConfig {
     public var userInterfaceStyle: UIUserInterfaceStyle?
 }
 ```
+
+> **Note:** The `language` option is currently a work in progress. Only English is supported at this time. Russian and Uzbek support will be added in a future release.
 
 ### Custom Debug Actions
 
