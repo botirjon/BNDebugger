@@ -8,6 +8,12 @@
 
 A comprehensive debugging toolkit for iOS applications that provides real-time monitoring and inspection capabilities for network requests, app performance, file system resources, and app configuration.
 
+## Why BNDebugger?
+
+**This package does not use method swizzling**, unlike many other debugging tools. This makes it compatible with dependencies that restrict or prohibit method swizzling in your app.
+
+This package was made out of necessity — there are far more advanced debugging tools out there, however, if they cannot be used due to method swizzling restrictions, BNDebugger is an excellent alternative.
+
 ## Features
 
 - **Network Monitoring** - Intercept and inspect all HTTP/HTTPS requests with full request/response details including headers, body, status codes, and response times
@@ -123,6 +129,33 @@ DebugManager.shared.customActions = [
 ]
 ```
 
+### Alamofire Integration
+
+BNDebugger uses `URLProtocol` for network interception, which doesn't automatically capture requests made through Alamofire's custom session. To enable network monitoring for Alamofire requests, create a custom session with `DebugURLProtocol`:
+
+```swift
+import Alamofire
+import BNDebugger
+
+extension Alamofire.Session {
+    static var debuggableSession: Alamofire.Session {
+        let sessionConfiguration = URLSessionConfiguration.default
+        #if DEBUG || STAGING
+        sessionConfiguration.protocolClasses = [DebugURLProtocol.self] +
+            (sessionConfiguration.protocolClasses ?? [])
+        #endif
+        return Alamofire.Session(configuration: sessionConfiguration)
+    }
+}
+```
+
+Then use this session for your network requests:
+
+```swift
+self.session = .debuggableSession
+let request = session.request(urlRequest, interceptor: NetworkInterceptor.shared).validate()
+```
+
 ## Debug Interface
 
 The debug interface provides four main tabs:
@@ -159,6 +192,8 @@ BNDebugger uses a hybrid UIKit/SwiftUI architecture with MVVM pattern:
 - **DebugURLProtocol** - Custom URLProtocol for network interception
 - **PerformanceMonitor** - CPU and memory tracking using mach kernel APIs
 - **NetworkInterceptor** - Thread-safe request storage and management
+
+> **Note:** Currently, reading performance metrics and fetching/displaying network requests is implemented via a polling mechanism. Future releases will transition to a more elegant event-based approach.
 
 ## License
 
