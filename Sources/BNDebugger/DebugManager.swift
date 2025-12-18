@@ -148,7 +148,7 @@ public class DebugManager: NSObject {
         
         debugWindow = UIWindow(windowScene: windowScene)
         debugWindow?.rootViewController = navigationController
-        debugWindow?.windowLevel = UIWindow.Level.alert + 1
+        debugWindow?.windowLevel = UIWindow.Level.alert + 100
         debugWindow?.makeKeyAndVisible()
         debugWindow?.overrideUserInterfaceStyle = preferredUserInterfaceStyle
     }
@@ -271,7 +271,7 @@ private class FloatingDebugButton: UIView {
     
     func show(in windowScene: UIWindowScene) {
         embeddedWindow = PassThroughWindow(windowScene: windowScene)
-        embeddedWindow?.windowLevel = UIWindow.Level.statusBar + 1
+        embeddedWindow?.windowLevel = UIWindow.Level.alert + 99
         embeddedWindow?.backgroundColor = UIColor.clear
         embeddedWindow?.rootViewController = UIViewController()
         embeddedWindow?.isHidden = false

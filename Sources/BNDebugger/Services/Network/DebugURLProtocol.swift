@@ -40,23 +40,25 @@ public class DebugURLProtocol: URLProtocol, URLSessionDataDelegate {
             client?.urlProtocolDidFinishLoading(self)
             return
         }
-        
+
         requestStartTime = Date()
-        
+
         // Create network request record
         let headers = newRequest.allHTTPHeaderFields ?? [:]
+        let requestBody = captureRequestBody(from: newRequest)
+
         networkRequest = NetworkRequest(
             url: newRequest.url?.absoluteString ?? "",
             method: newRequest.httpMethod,
             headers: headers,
-            body: newRequest.httpBody,
+            body: requestBody,
             timestamp: requestStartTime!
         )
-        
+
         if let networkRequest = networkRequest {
             NotificationCenter.default.post(name: .debugRequestDidStart, object: networkRequest)
         }
-        
+
         // Create session and data task
         session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
         dataTask = session?.dataTask(with: newRequest as URLRequest)
@@ -76,7 +78,45 @@ public class DebugURLProtocol: URLProtocol, URLSessionDataDelegate {
         return mutableRequest
     }
 
-    
+    private func captureRequestBody(from request: NSMutableURLRequest) -> Data? {
+        // First, try to get body from httpBody
+        if let httpBody = request.httpBody {
+            return httpBody
+        }
+
+        // If httpBody is nil, try to read from httpBodyStream
+        if let bodyStream = request.httpBodyStream {
+            bodyStream.open()
+            defer { bodyStream.close() }
+
+            let bufferSize = 4096
+            var bodyData = Data()
+            let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+            defer { buffer.deallocate() }
+
+            while bodyStream.hasBytesAvailable {
+                let bytesRead = bodyStream.read(buffer, maxLength: bufferSize)
+                if bytesRead > 0 {
+                    bodyData.append(buffer, count: bytesRead)
+                } else if bytesRead < 0 {
+                    // Error occurred
+                    break
+                }
+            }
+
+            // Need to recreate the stream for the actual request
+            // since we just consumed it
+            if !bodyData.isEmpty {
+                request.httpBodyStream = InputStream(data: bodyData)
+            }
+
+            return bodyData.isEmpty ? nil : bodyData
+        }
+
+        return nil
+    }
+
+
     // MARK: - URL Session Delegate
     public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
